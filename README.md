@@ -4,7 +4,7 @@ ClipMind AI is an Infosys Springboard project that turns uploaded videos into ti
 
 ## Project status
 
-Current milestone: Day 1 — product definition and project setup.
+Current milestone: Day 2 — build-ready architecture, database schema, API contract and wireframes.
 
 The planned MVP flow is:
 
@@ -18,6 +18,9 @@ The planned MVP flow is:
 - [Security and Access](docs/ClipMindAI_Security_and_Access.md)
 - [Frontend Specification](docs/ClipMindAI_Frontend_Specification.md)
 - [Feature Tickets](docs/ClipMindAI_Feature_Tickets.md)
+- [Database Schema](docs/Database_Schema.md)
+- [API Contract](docs/API_Contract.md)
+- [Wireframes](docs/Wireframes.md)
 
 ## Planned stack
 
