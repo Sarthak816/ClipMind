@@ -4,18 +4,17 @@ import Logo from "@/components/Logo";
 export default function Home() {
   return (
     <div className="flex min-h-screen flex-col">
-      {/* Navigation */}
       <header className="flex items-center justify-between border-b border-clipmind-border px-6 py-4">
         <Logo />
         <div className="flex items-center gap-4">
           <Link
-            href="/dashboard"
+            href="/login"
             className="rounded-md px-4 py-2 text-sm font-medium text-clipmind-text-muted transition-colors hover:text-clipmind-text"
           >
             Log in
           </Link>
           <Link
-            href="/dashboard"
+            href="/register"
             className="rounded-md bg-clipmind-primary px-4 py-2 text-sm font-semibold text-clipmind-bg transition-colors hover:bg-clipmind-primary-hover"
           >
             Summarize a video
@@ -23,7 +22,6 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Hero */}
       <main className="flex flex-1 flex-col items-center justify-center px-6 py-24 text-center">
         <h1 className="max-w-3xl text-5xl font-bold leading-tight tracking-tight md:text-6xl">
           Turn a 40-minute video into a{" "}
@@ -34,7 +32,7 @@ export default function Home() {
         </p>
         <div className="mt-10 flex flex-col gap-4 sm:flex-row">
           <Link
-            href="/dashboard"
+            href="/register"
             className="rounded-md bg-clipmind-primary px-6 py-3 text-base font-semibold text-clipmind-bg transition-colors hover:bg-clipmind-primary-hover"
           >
             Summarize a video
@@ -47,7 +45,6 @@ export default function Home() {
           </Link>
         </div>
 
-        {/* Stats */}
         <div className="mt-20 grid max-w-2xl grid-cols-1 gap-8 sm:grid-cols-3">
           <div className="rounded-lg border border-clipmind-border bg-clipmind-surface p-6">
             <p className="text-3xl font-bold text-clipmind-primary">92%</p>
@@ -70,7 +67,6 @@ export default function Home() {
         </div>
       </main>
 
-      {/* How it works */}
       <section
         id="how-it-works"
         className="border-t border-clipmind-border bg-clipmind-surface px-6 py-20"
@@ -96,7 +92,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Footer */}
       <footer className="border-t border-clipmind-border px-6 py-8 text-center text-sm text-clipmind-text-muted">
         <p>
           * Use only clearly labelled illustrative/demo metrics until real data

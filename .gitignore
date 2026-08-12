@@ -20,7 +20,7 @@ venv/
 # Generated media and model artifacts
 uploads/
 storage/
-models/
+/models/
 *.wav
 *.mp4
 *.mov

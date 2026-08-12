@@ -11,7 +11,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD--SHELL", "pg_isready -U ${POSTGRES_USER:-clipmind}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-clipmind}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -26,6 +26,9 @@ services:
     environment:
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
       DATABASE_URL: postgresql://${POSTGRES_USER:-clipmind}:${POSTGRES_PASSWORD:-clipmind_dev}@db:5432/${POSTGRES_DB:-clipmind}
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-in-production}
+      JWT_ACCESS_TTL_MINUTES: ${JWT_ACCESS_TTL_MINUTES:-15}
+      JWT_REFRESH_TTL_DAYS: ${JWT_REFRESH_TTL_DAYS:-7}
     depends_on:
       db:
         condition: service_healthy
