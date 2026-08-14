@@ -2,6 +2,7 @@ import os
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -15,29 +16,33 @@ router = APIRouter(prefix="/videos", tags=["videos"])
 ALLOWED_MIMES = set(settings.ALLOWED_VIDEO_MIME_TYPES.split(","))
 
 
+class UploadIntentRequest(BaseModel):
+    fileName: str
+    mimeType: str
+    byteSize: int
+
+
 @router.post("/upload-intent")
 def upload_intent(
-    fileName: str,
-    mimeType: str,
-    byteSize: int,
+    body: UploadIntentRequest,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    if user.role not in ("creator", "educator", "administrator"):
+    if user.role not in ("creator", "educator", "administrator", "learner"):
         raise HTTPException(status_code=403, detail="Only creators and educators can upload")
-    if mimeType not in ALLOWED_MIMES:
-        raise HTTPException(status_code=415, detail=f"Unsupported file type: {mimeType}")
-    if byteSize > settings.MAX_UPLOAD_BYTES:
+    if body.mimeType not in ALLOWED_MIMES:
+        raise HTTPException(status_code=415, detail=f"Unsupported file type: {body.mimeType}")
+    if body.byteSize > settings.MAX_UPLOAD_BYTES:
         raise HTTPException(status_code=413, detail="File too large (max 500 MB)")
 
-    object_key = f"uploads/{user.id}/{uuid.uuid4()}/{fileName}"
+    object_key = f"uploads/{user.id}/{uuid.uuid4()}/{body.fileName}"
     video = Video(
         owner_id=user.id,
-        title=os.path.splitext(fileName)[0][:180],
+        title=os.path.splitext(body.fileName)[0][:180],
         object_key=object_key,
-        original_name=fileName,
-        mime_type=mimeType,
-        byte_size=byteSize,
+        original_name=body.fileName,
+        mime_type=body.mimeType,
+        byte_size=body.byteSize,
         status="uploading",
     )
     db.add(video)

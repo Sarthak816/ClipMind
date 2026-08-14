@@ -1,8 +1,6 @@
 import uuid
-from datetime import datetime, timezone
-
 from sqlalchemy import Column, DateTime, Integer, String, Text
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.sql import func
 
 from app.db.session import Base
 
@@ -10,8 +8,8 @@ from app.db.session import Base
 class Video(Base):
     __tablename__ = "videos"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    owner_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    owner_id = Column(String(36), nullable=False, index=True)
     title = Column(String(180), nullable=False)
     description = Column(Text, nullable=True)
     object_key = Column(Text, unique=True, nullable=False)
@@ -21,12 +19,6 @@ class Video(Base):
     duration_seconds = Column(Integer, nullable=True)
     status = Column(String(20), nullable=False, default="uploading")
     language_code = Column(String(12), nullable=True)
-    created_at = Column(
-        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
-    )
-    updated_at = Column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
-    )
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     deleted_at = Column(DateTime(timezone=True), nullable=True)

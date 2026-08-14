@@ -18,9 +18,9 @@ def get_current_user(
     if credentials:
         token = credentials.credentials
     else:
-        cookie = request.cookies.get("refresh_token")
-        if cookie:
-            token = cookie
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            token = auth_header[7:]
 
     if not token:
         raise HTTPException(
@@ -35,7 +35,10 @@ def get_current_user(
             detail="Invalid or expired token",
         )
 
-    user = db.query(User).filter(User.id == payload["sub"]).first()
+    user_id = str(payload["sub"])
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        user = db.query(User).filter(str(User.id) == user_id).first()
     if not user or user.status != "active":
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
