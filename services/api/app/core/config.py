@@ -4,10 +4,10 @@ import os
 class Settings:
     DATABASE_URL: str = os.getenv(
         "DATABASE_URL",
-        "postgresql://clipmind:changeme@localhost:5432/clipmind",
+        "",
     )
     CORS_ORIGINS: str = os.getenv("CORS_ORIGINS", "http://localhost:3000")
-    JWT_SECRET: str = os.getenv("JWT_SECRET", "dev-secret-change-me")
+    JWT_SECRET: str = os.getenv("JWT_SECRET", "dev-secret-change-in-production")
     JWT_ALGORITHM: str = "HS256"
     JWT_ACCESS_TTL_MINUTES: int = int(os.getenv("JWT_ACCESS_TTL_MINUTES", "15"))
     JWT_REFRESH_TTL_DAYS: int = int(os.getenv("JWT_REFRESH_TTL_DAYS", "7"))
@@ -35,6 +35,17 @@ class Settings:
     SUMMARY_TIMEOUT_SECONDS: int = int(os.getenv("SUMMARY_TIMEOUT_SECONDS", "120"))
     WORKER_POLL_SECONDS: int = int(os.getenv("WORKER_POLL_SECONDS", "2"))
     JOB_MAX_ATTEMPTS: int = int(os.getenv("JOB_MAX_ATTEMPTS", "2"))
+
+    @property
+    def database_url(self) -> str:
+        if self.DATABASE_URL:
+            return self.DATABASE_URL
+        db_path = os.path.join(os.path.dirname(__file__), "..", "..", "clipmind.db")
+        return f"sqlite:///{os.path.abspath(db_path)}"
+
+    @property
+    def is_sqlite(self) -> bool:
+        return "sqlite" in self.database_url
 
 
 settings = Settings()

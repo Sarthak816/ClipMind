@@ -16,6 +16,12 @@ __pycache__/
 .mypy_cache/
 .venv/
 venv/
+*.db
+*.db-shm
+*.db-wal
+
+# Next.js generated
+next-env.d.ts
 
 # Generated media and model artifacts
 uploads/

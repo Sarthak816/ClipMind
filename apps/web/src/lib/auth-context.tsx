@@ -37,9 +37,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchUser = useCallback(async () => {
     try {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        setLoading(false);
+        return;
+      }
       const me = await api<User>("/auth/me");
       setUser(me);
     } catch {
+      localStorage.removeItem("accessToken");
       setUser(null);
     } finally {
       setLoading(false);

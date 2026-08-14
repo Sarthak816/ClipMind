@@ -1,13 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import (
-    Column,
-    DateTime,
-    Enum,
-    String,
-    Text,
-)
+from sqlalchemy import Column, DateTime, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.db.session import Base
@@ -20,16 +14,8 @@ class User(Base):
     email = Column(String(255), unique=True, nullable=False, index=True)
     password_hash = Column(Text, nullable=False)
     display_name = Column(String(80), nullable=False)
-    role = Column(
-        Enum("creator", "learner", "educator", "administrator", name="user_role"),
-        nullable=False,
-        default="learner",
-    )
-    status = Column(
-        Enum("active", "suspended", name="user_status"),
-        nullable=False,
-        default="active",
-    )
+    role = Column(String(20), nullable=False, default="learner")
+    status = Column(String(20), nullable=False, default="active")
     created_at = Column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )

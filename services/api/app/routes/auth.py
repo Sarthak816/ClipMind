@@ -1,7 +1,7 @@
 import hashlib
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -49,6 +49,18 @@ def _issue_tokens(user: User, db: Session) -> TokenResponse:
     )
 
 
+def _set_refresh_cookie(response: Response, token: str):
+    response.set_cookie(
+        "refresh_token",
+        token,
+        httponly=True,
+        secure=False,
+        samesite="lax",
+        max_age=settings.JWT_REFRESH_TTL_DAYS * 86400,
+        path="/",
+    )
+
+
 @router.post("/register", response_model=TokenResponse, status_code=201)
 def register(body: UserRegister, response: Response, db: Session = Depends(get_db)):
     existing = db.query(User).filter(User.email == body.email).first()
@@ -66,15 +78,7 @@ def register(body: UserRegister, response: Response, db: Session = Depends(get_d
     db.commit()
     db.refresh(user)
     tokens = _issue_tokens(user, db)
-    response.set_cookie(
-        "refresh_token",
-        create_refresh_token(str(user.id)),
-        httponly=True,
-        secure=True,
-        samesite="lax",
-        max_age=settings.JWT_REFRESH_TTL_DAYS * 86400,
-        path="/",
-    )
+    _set_refresh_cookie(response, create_refresh_token(str(user.id)))
     return tokens
 
 
@@ -91,15 +95,7 @@ def login(body: UserLogin, response: Response, db: Session = Depends(get_db)):
             status_code=status.HTTP_403_FORBIDDEN, detail="Account is suspended"
         )
     tokens = _issue_tokens(user, db)
-    response.set_cookie(
-        "refresh_token",
-        create_refresh_token(str(user.id)),
-        httponly=True,
-        secure=True,
-        samesite="lax",
-        max_age=settings.JWT_REFRESH_TTL_DAYS * 86400,
-        path="/",
-    )
+    _set_refresh_cookie(response, create_refresh_token(str(user.id)))
     return tokens
 
 
@@ -136,15 +132,7 @@ def refresh(request: Request, response: Response, db: Session = Depends(get_db))
             status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found"
         )
     tokens = _issue_tokens(user, db)
-    response.set_cookie(
-        "refresh_token",
-        create_refresh_token(str(user.id)),
-        httponly=True,
-        secure=True,
-        samesite="lax",
-        max_age=settings.JWT_REFRESH_TTL_DAYS * 86400,
-        path="/",
-    )
+    _set_refresh_cookie(response, create_refresh_token(str(user.id)))
     return tokens
 
 
