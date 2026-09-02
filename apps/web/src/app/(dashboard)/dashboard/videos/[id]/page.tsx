@@ -47,6 +47,8 @@ interface VideoData {
   status: string;
   originalName: string;
   durationSeconds: number | null;
+  mimeType?: string;
+  objectKey?: string;
 }
 
 function formatMs(ms: number) {
@@ -67,19 +69,65 @@ export default function VideoDetailPage() {
   const [searchResults, setSearchResults] = useState<Segment[]>([]);
   const [activeTab, setActiveTab] = useState<"summary" | "transcript">("summary");
   const [summaryKind, setSummaryKind] = useState<"short" | "detailed">("short");
+  const [isBookmarked, setIsBookmarked] = useState(false);
 
   useEffect(() => {
-    api<VideoData>(`/videos/${videoId}`).then(setVideo).catch(() => {});
-    api<TranscriptData>(`/videos/${videoId}/transcripts/current`)
-      .then(setTranscript)
-      .catch(() => {});
-    api<{ summaries: SummaryData[] }>(`/videos/${videoId}/summaries`)
-      .then((d) => setSummaries(d.summaries))
-      .catch(() => {});
-    api<{ moments: KeyMomentData[] }>(`/videos/${videoId}/key-moments`)
-      .then((d) => setMoments(d.moments))
-      .catch(() => {});
+    // Reset state for the new video ID to prevent UI bleed
+    setVideo(null);
+    setTranscript(null);
+    setSummaries([]);
+    setMoments([]);
+    setSearchQuery("");
+    setSearchResults([]);
+    setIsBookmarked(false);
+
+    let active = true;
+    let intervalId: NodeJS.Timeout | null = null;
+
+    api(`/history/view`, {
+      method: "POST",
+      body: { videoId },
+    }).catch(() => {});
+
+    const fetchAllData = async () => {
+      try {
+        const v = await api<VideoData>(`/videos/${videoId}`);
+        if (!active) return;
+        setVideo(v);
+
+        if (v.status === "ready") {
+          api<TranscriptData>(`/videos/${videoId}/transcripts/current`)
+            .then((t) => active && setTranscript(t))
+            .catch(() => {});
+          api<{ summaries: SummaryData[] }>(`/videos/${videoId}/summaries`)
+            .then((d) => active && setSummaries(d.summaries))
+            .catch(() => {});
+          api<{ moments: KeyMomentData[] }>(`/videos/${videoId}/key-moments`)
+            .then((d) => active && setMoments(d.moments))
+            .catch(() => {});
+          
+          if (intervalId) {
+            clearInterval(intervalId);
+            intervalId = null;
+          }
+        }
+      } catch {
+        // ignore
+      }
+    };
+
+    // Fetch immediately
+    fetchAllData();
+
+    // Start polling, and we will clear it inside fetchAllData once it is ready
+    intervalId = setInterval(fetchAllData, 3000);
+
+    return () => {
+      active = false;
+      if (intervalId) clearInterval(intervalId);
+    };
   }, [videoId]);
+
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) {
@@ -100,11 +148,44 @@ export default function VideoDetailPage() {
 
   return (
     <div className="mx-auto max-w-5xl">
+      {video?.mimeType === "video/youtube" && video?.objectKey && (
+        <div className="mb-6 aspect-video w-full overflow-hidden rounded-lg border border-clipmind-border">
+          <iframe
+            className="h-full w-full"
+            src={`https://www.youtube.com/embed/${new URL(video.objectKey).searchParams.get("v")}`}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+        </div>
+      )}
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold">{video?.title || "Loading..."}</h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-xl font-semibold">{video?.title || "Loading..."}</h2>
+            {video && (
+              <button
+                onClick={async () => {
+                  try {
+                    await api("/bookmarks", {
+                      method: "POST",
+                      body: { videoId: video.id },
+                    });
+                    setIsBookmarked(!isBookmarked);
+                  } catch (e) {
+                    console.error(e);
+                  }
+                }}
+                className={`transition-colors ${isBookmarked ? "text-clipmind-primary" : "text-clipmind-text-muted hover:text-clipmind-primary"}`}
+                title="Bookmark"
+              >
+                <svg className="w-5 h-5" fill={isBookmarked ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                </svg>
+              </button>
+            )}
+          </div>
           {video && (
-            <p className="text-sm text-clipmind-text-muted">
+            <p className="mt-1 text-sm text-clipmind-text-muted">
               {video.originalName}
               {video.durationSeconds &&
                 ` \u2022 ${Math.floor(video.durationSeconds / 60)}:${String(video.durationSeconds % 60).padStart(2, "0")}`}
@@ -195,6 +276,13 @@ export default function VideoDetailPage() {
                   AI-generated ({activeSummary.modelName}) &bull; v{activeSummary.version}
                 </p>
               </div>
+            ) : video?.status === "processing" || video?.status === "queued" ? (
+              <div className="flex flex-col items-center justify-center py-8">
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-clipmind-primary border-t-transparent mb-3"></div>
+                <p className="text-sm text-clipmind-text-muted">
+                  AI processing in progress... Generating transcripts and summaries.
+                </p>
+              </div>
             ) : (
               <p className="text-sm text-clipmind-text-muted">
                 No summary available yet. Process the video to generate a summary.
@@ -245,6 +333,13 @@ export default function VideoDetailPage() {
                     </div>
                   ),
                 )}
+              </div>
+            ) : video?.status === "processing" || video?.status === "queued" ? (
+              <div className="p-10 text-center flex flex-col items-center justify-center">
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-clipmind-primary border-t-transparent mb-3"></div>
+                <p className="text-sm text-clipmind-text-muted">
+                  Transcribing audio in progress... Please wait.
+                </p>
               </div>
             ) : (
               <div className="p-10 text-center">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { api } from "@/lib/api";
 
 interface Video {
@@ -37,12 +38,12 @@ export default function VideosPage() {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <h2 className="text-xl font-semibold">My videos</h2>
-        <a
+        <Link
           href="/dashboard/upload"
           className="rounded-md bg-clipmind-primary px-4 py-2 text-sm font-semibold text-clipmind-bg transition-colors hover:bg-clipmind-primary-hover"
         >
           Upload video
-        </a>
+        </Link>
       </div>
       {loading ? (
         <p className="text-clipmind-text-muted">Loading...</p>
@@ -55,7 +56,7 @@ export default function VideosPage() {
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {videos.map((v) => (
-            <a
+            <Link
               key={v.id}
               href={`/dashboard/videos/${v.id}`}
               className="rounded-lg border border-clipmind-border bg-clipmind-surface p-4 transition-colors hover:bg-clipmind-surface-raised"
@@ -77,7 +78,7 @@ export default function VideosPage() {
                   </span>
                 )}
               </div>
-            </a>
+            </Link>
           ))}
         </div>
       )}
