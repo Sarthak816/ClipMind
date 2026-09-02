@@ -1,88 +1,130 @@
 # ClipMind AI
 
-ClipMind AI is an Infosys Springboard project that turns uploaded videos into timestamped transcripts, concise AI summaries, and explainable key moments.
+<div align="center">
+  <img src="https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white" alt="Next.js" />
+  <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/Neon-00E599?style=for-the-badge&logo=neon&logoColor=black" alt="Neon" />
+  <img src="https://img.shields.io/badge/Groq-F55036?style=for-the-badge&logo=groq&logoColor=white" alt="Groq AI" />
+  <img src="https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind" />
+</div>
+<br/>
 
-## Project status
+**ClipMind AI** is a premium, full-stack AI SaaS application that automatically extracts intelligence from video files and YouTube links. It leverages fast LPU inference (Groq) and Whisper transcription to generate deep analytical summaries, full search-indexed transcripts, and key-moment extraction from any video in seconds.
 
-Current milestone: Day 2 — build-ready architecture, database schema, API contract and wireframes.
+Designed with a high-end aesthetic, ClipMind features smooth Framer Motion animations, a pitch-black glassmorphic UI, and a true responsive design.
 
-The planned MVP flow is:
+---
 
-`Upload video → extract audio → transcribe → summarize → identify key moments → review and export`
+## Features
 
-## Documentation
+- **Universal Video Ingestion**: Drag-and-drop local `.mp4`/`.mov` files or paste a YouTube link.
+- **Fast AI Pipelines**: Audio extraction via `ffmpeg`/`yt-dlp`, transcription via `faster-whisper`, and intelligent summarization powered by Groq's compound models.
+- **Smart Transcripts**: Fully searchable, timestamped transcripts that allow you to jump to exact moments in the conversation.
+- **Key Moments Detection**: Heuristic algorithms combined with AI analysis to automatically pinpoint the most important highlights of any video.
+- **Analytics Dashboard**: Track watch history, process states, and bookmark critical video moments.
+- **Premium UI/UX**: Built with Next.js 14, Tailwind CSS, Lucide Icons, and Framer Motion for a fluid user experience.
 
-- [25-Day Roadmap](docs/ClipMindAI_25Day_Roadmap.md)
-- [Product Requirements](docs/ClipMindAI_PRD.md)
-- [Technical Architecture](docs/ClipMindAI_Technical_Architecture.md)
-- [Security and Access](docs/ClipMindAI_Security_and_Access.md)
-- [Frontend Specification](docs/ClipMindAI_Frontend_Specification.md)
-- [Feature Tickets](docs/ClipMindAI_Feature_Tickets.md)
-- [Database Schema](docs/Database_Schema.md)
-- [API Contract](docs/API_Contract.md)
-- [Wireframes](docs/Wireframes.md)
+---
 
-## Project structure
+## System Architecture
 
-```text
-clipmind/
-  apps/web/           Next.js UI (TypeScript, Tailwind, App Router)
-  services/api/       FastAPI backend (Python)
-  docs/               Project documentation
-  docker-compose.yml  Local development stack
+ClipMind uses a highly scalable decoupled architecture, communicating via REST APIs and Background Task queues.
+
+```mermaid
+graph TD
+    %% Frontend
+    Client[Next.js Client] -->|Upload / Fetch| API[FastAPI Backend]
+    
+    %% API & Database
+    API -->|Read / Write| DB[(Neon Serverless Postgres)]
+    
+    %% Background Workers
+    API -.->|Spawns Background Task| Worker[Async Video Processor]
+    
+    %% Worker Steps
+    Worker -->|1. Extract Audio| YTDLP[yt-dlp / ffmpeg]
+    Worker -->|2. Transcribe| Whisper[Faster-Whisper]
+    Worker -->|3. Summarize| Groq[Groq LPU API]
+    
+    %% Output
+    Whisper -.-> DB
+    Groq -.-> DB
 ```
 
-## Planned stack
+---
 
-Next.js/React with TypeScript and Tailwind; FastAPI/Python; PostgreSQL; S3-compatible private storage; FFmpeg; faster-whisper; one Hugging Face summarization model; Docker Compose.
+## Tech Stack
 
-## Local development (Day 3+)
+### Frontend (Vercel)
+- **Framework**: Next.js 14 (App Router)
+- **Styling**: Tailwind CSS + Framer Motion
+- **Icons**: Lucide React
+- **State Management**: React Context (Auth)
 
-### Prerequisites
+### Backend (Render / Docker)
+- **Framework**: FastAPI (Python 3.11)
+- **Database**: PostgreSQL (Neon Serverless)
+- **ORM**: SQLAlchemy + Alembic
+- **AI Models**: `faster-whisper` (Local Transcription), `Groq` (Cloud LLM)
+- **Video Processing**: `ffmpeg`, `yt-dlp`
 
-- Docker and Docker Compose v2
-- Node.js 20+ (for local web development without Docker)
-- Python 3.11+ (for local API development without Docker)
+---
 
-### Quick start with Docker Compose
+## Getting Started (Local Development)
 
+### 1. Clone the repository
 ```bash
-# 1. Clone the repository
 git clone https://github.com/Sarthak816/ClipMind.git
 cd ClipMind
-
-# 2. Copy environment files
-cp .env.example .env
-
-# 3. Start all services
-docker compose up --build
-
-# 4. Verify
-#    Web:   http://localhost:3000
-#    API:   http://localhost:8000/health
-#    DB:    localhost:5432
 ```
 
-### Running without Docker
-
-**API:**
-
+### 2. Set up the Backend
 ```bash
 cd services/api
 python -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
+```
+Create a `.env` file in `services/api` with your credentials:
+```env
+DATABASE_URL=postgresql://user:pass@ep-host.neon.tech/neondb?sslmode=require
+GROQ_API_KEY=gsk_your_groq_api_key
+CORS_ORIGINS=http://localhost:3000
+```
+Run the backend:
+```bash
+# Apply database migrations
+alembic upgrade head
+# Start the server
+uvicorn app.main:app --reload --port 8001
 ```
 
-**Web:**
-
+### 3. Set up the Frontend
 ```bash
-cd apps/web
+cd ../../apps/web
 npm install
+```
+Create a `.env.local` file in `apps/web`:
+```env
+NEXT_PUBLIC_API_URL=http://localhost:8001
+```
+Run the frontend:
+```bash
 npm run dev
 ```
 
-## License
+Visit `http://localhost:3000` in your browser.
 
-For academic project use. Add a chosen open-source license before making the repository publicly reusable.
+---
+
+## Deployment
+
+ClipMind is fully Dockerized and optimized for cloud deployment.
+
+- **Backend**: Can be instantly deployed to Render or Google Cloud Run using the included `Dockerfile`. (Note: Set `CORS_ORIGINS` to your production frontend URL).
+- **Frontend**: One-click deployment to Vercel. (Note: Set `NEXT_PUBLIC_API_URL` to your production backend URL).
+
+---
+
+## License
+This project is licensed under the MIT License.
