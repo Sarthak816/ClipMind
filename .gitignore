@@ -38,3 +38,4 @@ storage/
 Thumbs.db
 .idea/
 .vscode/
+*.log
