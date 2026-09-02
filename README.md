@@ -9,6 +9,12 @@
 </div>
 <br/>
 
+<div align="center">
+  <strong>Live Demo:</strong> <a href="https://clip-mind-nine.vercel.app">https://clip-mind-nine.vercel.app</a><br/>
+  <strong>API Server:</strong> <a href="https://clipmind-4izz.onrender.com/docs">https://clipmind-4izz.onrender.com/docs</a>
+</div>
+<br/>
+
 **ClipMind AI** is a premium, full-stack AI SaaS application that automatically extracts intelligence from video files and YouTube links. It leverages fast LPU inference (Groq) and Whisper transcription to generate deep analytical summaries, full search-indexed transcripts, and key-moment extraction from any video in seconds.
 
 Designed with a high-end aesthetic, ClipMind features smooth Framer Motion animations, a pitch-black glassmorphic UI, and a true responsive design.
