@@ -3,19 +3,19 @@
 @tailwind utilities;
 
 :root {
-  --bg: #0B0D12;
-  --surface: #121722;
-  --surface-raised: #191F2C;
-  --text: #F4F7FB;
-  --text-muted: #AAB4C3;
-  --border: #2A3445;
-  --primary: #FF7A66;
-  --primary-hover: #FF927F;
-  --primary-active: #E86250;
-  --focus: #7DD3FC;
-  --success: #43D19E;
-  --warning: #F7C35F;
-  --danger: #FF6B6B;
+  --bg: #000000;
+  --surface: #09090b;
+  --surface-raised: #121214;
+  --text: #ededed;
+  --text-muted: #a1a1aa;
+  --border: rgba(255, 255, 255, 0.08);
+  --primary: #ffffff;
+  --primary-hover: #e5e5e5;
+  --primary-active: #a3a3a3;
+  --focus: rgba(255, 255, 255, 0.2);
+  --success: #22c55e;
+  --warning: #eab308;
+  --danger: #ef4444;
 }
 
 html,
