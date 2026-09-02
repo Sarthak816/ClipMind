@@ -35,7 +35,7 @@ class AuditLog(Base):
     entity_type = Column(String(40), nullable=False)
     entity_id = Column(String(36), nullable=True)
     ip_hash = Column(String(128), nullable=True)
-    metadata = Column(Text, nullable=True)
+    metadata_ = Column("metadata", Text, nullable=True)
     occurred_at = Column(DateTime(timezone=True), server_default=func.now())
 
 

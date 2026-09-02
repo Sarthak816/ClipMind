@@ -87,6 +87,7 @@ def search_transcript(
         "query": q,
         "results": [
             {
+                "id": str(s.id),
                 "sequence": s.sequence,
                 "startMs": s.start_ms,
                 "endMs": s.end_ms,
