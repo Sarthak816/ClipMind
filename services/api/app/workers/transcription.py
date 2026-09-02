@@ -36,53 +36,65 @@ def transcribe(
     db.commit()
 
     try:
-        from faster_whisper import WhisperModel
+        from groq import Groq
+        import json
 
+        if not settings.GROQ_API_KEY:
+            raise ValueError("GROQ_API_KEY is not set in environment.")
+
+        client = Groq(api_key=settings.GROQ_API_KEY)
         audio_path = f"/tmp/clipmind/{video.id}/audio.wav"
-        model = WhisperModel(
-            settings.WHISPER_MODEL,
-            device=settings.WHISPER_DEVICE,
-            compute_type=settings.WHISPER_COMPUTE_TYPE,
-        )
-        segments_gen, info = model.transcribe(audio_path, beam_size=5)
-
+        
+        with open(audio_path, "rb") as audio_file:
+            transcription = client.audio.transcriptions.create(
+                file=("audio.wav", audio_file.read()),
+                model="whisper-large-v3",
+                response_format="verbose_json",
+            )
+            
+        # The transcription object has a text attribute and a segments attribute
         transcript = Transcript(
             video_id=video.id,
             version=1,
-            language=info.language or "en",
-            source="whisper",
-            body="",
+            language=transcription.language if hasattr(transcription, 'language') else "en",
+            source="groq-whisper",
+            body=transcription.text,
         )
         db.add(transcript)
         db.flush()
 
-        full_text_parts = []
-        for i, seg in enumerate(segments_gen, start=1):
+        segments = getattr(transcription, 'segments', [])
+        for i, seg in enumerate(segments, start=1):
+            # Groq returns dicts for segments in verbose_json in some SDK versions, or objects in others
+            if isinstance(seg, dict):
+                start = seg.get("start", 0)
+                end = seg.get("end", 0)
+                text = seg.get("text", "").strip()
+                confidence = None
+            else:
+                start = getattr(seg, "start", 0)
+                end = getattr(seg, "end", 0)
+                text = getattr(seg, "text", "").strip()
+                confidence = getattr(seg, "avg_logprob", None)
+                if confidence is not None:
+                    confidence = round(confidence, 3)
+
             segment = TranscriptSegment(
                 transcript_id=transcript.id,
                 sequence=i,
-                start_ms=int(seg.start * 1000),
-                end_ms=int(seg.end * 1000),
-                text=seg.text.strip(),
-                confidence=round(seg.avg_logprob, 3) if seg.avg_logprob else None,
+                start_ms=int(start * 1000),
+                end_ms=int(end * 1000),
+                text=text,
+                confidence=confidence,
             )
             db.add(segment)
-            full_text_parts.append(seg.text.strip())
 
-        transcript.body = " ".join(full_text_parts)
         job.status = "completed"
         job.progress = 100
         job.finished_at = datetime.now(timezone.utc)
         db.commit()
         return {"status": "completed", "transcriptId": str(transcript.id)}
 
-    except ImportError:
-        job.status = "failed"
-        job.error_code = "WHISPER_NOT_INSTALLED"
-        job.error_message = "faster-whisper is not installed"
-        job.finished_at = datetime.now(timezone.utc)
-        db.commit()
-        return {"status": "failed", "error": "faster-whisper not installed"}
     except Exception as e:
         job.status = "failed"
         job.error_code = "TRANSCRIPTION_FAILED"

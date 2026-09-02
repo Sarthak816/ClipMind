@@ -46,29 +46,35 @@ def summarize(
     db.commit()
 
     try:
-        from transformers import pipeline
+        from groq import Groq
 
-        text = transcript.body[:4096]
-        summarizer = pipeline(
-            "summarization",
-            model=settings.SUMMARY_MODEL_NAME,
-        )
+        if not settings.GROQ_API_KEY:
+            raise ValueError("GROQ_API_KEY is not set in environment.")
 
-        short_result = summarizer(
-            text,
-            max_length=150,
-            min_length=30,
-            do_sample=False,
-        )
-        short_content = short_result[0]["summary_text"]
+        client = Groq(api_key=settings.GROQ_API_KEY)
+        text = transcript.body[:25000] # Groq models have large context windows (8k-128k)
 
-        detailed_result = summarizer(
-            text,
-            max_length=512,
-            min_length=100,
-            do_sample=False,
+        # Generate short summary
+        completion_short = client.chat.completions.create(
+            model="groq/compound-mini",
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant that writes concise summaries."},
+                {"role": "user", "content": f"Write a 2-sentence summary of this transcript:\n\n{text}"}
+            ],
+            max_tokens=150,
         )
-        detailed_content = detailed_result[0]["summary_text"]
+        short_content = completion_short.choices[0].message.content.strip()
+
+        # Generate detailed summary
+        completion_detailed = client.chat.completions.create(
+            model="groq/compound-mini",
+            messages=[
+                {"role": "system", "content": "You are an expert analyst. Write a detailed, structured summary with bullet points."},
+                {"role": "user", "content": f"Write a detailed summary of this transcript with key takeaways:\n\n{text}"}
+            ],
+            max_tokens=1000,
+        )
+        detailed_content = completion_detailed.choices[0].message.content.strip()
 
         latest_version = (
             db.query(Summary)
@@ -84,7 +90,7 @@ def summarize(
             version=next_version,
             kind="short",
             content=short_content,
-            model_name=settings.SUMMARY_MODEL_NAME,
+            model_name="groq-llama-3.1",
             status="ready",
         )
         detailed = Summary(
@@ -93,7 +99,7 @@ def summarize(
             version=next_version,
             kind="detailed",
             content=detailed_content,
-            model_name=settings.SUMMARY_MODEL_NAME,
+            model_name="groq-llama-3.1",
             status="ready",
         )
         db.add(short)
@@ -104,12 +110,6 @@ def summarize(
         db.commit()
         return {"status": "completed"}
 
-    except ImportError:
-        job.status = "failed"
-        job.error_code = "TRANSFORMERS_NOT_INSTALLED"
-        job.error_message = "transformers is not installed"
-        db.commit()
-        return {"status": "failed", "error": "transformers not installed"}
     except Exception as e:
         job.status = "failed"
         job.error_code = "SUMMARY_FAILED"
